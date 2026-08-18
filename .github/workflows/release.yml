@@ -1,0 +1,67 @@
+name: Release
+
+# Tag a version to publish an installable zip:
+#   git tag v0.4.0 && git push origin v0.4.0
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Never publish something that won't load.
+      - name: Test
+        run: |
+          node test/test_unwrap.mjs
+          node test/test_links.mjs
+          node test/test_harvest.mjs
+          node test/test_crawl.mjs
+          node test/test_layout.mjs
+
+      - name: Check the tag matches manifest.json
+        run: |
+          manifest="$(node -p "require('./manifest.json').version")"
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$manifest" != "$tag" ]; then
+            echo "Tag $tag does not match manifest version $manifest" >&2
+            exit 1
+          fi
+          echo "version $manifest"
+
+      - name: Package
+        run: ./package.sh
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            Chrome only installs extensions from the Web Store, so this
+            installs as an unpacked extension. Takes about 30 seconds.
+
+            1. Download the `.zip` below and unzip it somewhere permanent
+               — Chrome loads it from that exact path on every launch, so
+               don't leave it in Downloads.
+            2. Go to `chrome://extensions`
+            3. Turn on **Developer mode** (top right)
+            4. Click **Load unpacked** and select the unzipped
+               `link-decrypt` folder
+
+            Requires [JDownloader 2](https://jdownloader.org/) for the
+            download hand-off: **Settings → Advanced Settings**, search
+            `externinterface`, enable **Remote Control / External
+            Interface**. Then use the extension's Settings → **Test
+            connection**.

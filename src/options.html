@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>link-decrypt settings</title>
+    <link rel="stylesheet" href="popup.css" />
+    <style>
+      body { width: auto; max-width: 640px; max-height: none; margin: 0 auto; padding: 24px; }
+      fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 0 0 18px; padding: 14px 16px; }
+      legend { padding: 0 6px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+      label.row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+      input[type="text"], input[type="number"], textarea {
+        font: inherit; color: var(--text); background: var(--panel);
+        border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px;
+      }
+      input[type="number"] { width: 90px; }
+      input[type="text"] { width: 180px; }
+      textarea { width: 100%; min-height: 180px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+      .hint { color: var(--muted); font-size: 12px; margin: 4px 0 10px; }
+      .actions { display: flex; align-items: center; gap: 12px; }
+      .btn { width: auto; padding: 8px 18px; }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>link-decrypt</h1>
+    <p class="hint">Settings are stored locally in Chrome and sync with your profile.</p>
+
+    <fieldset>
+      <legend>JDownloader 2</legend>
+      <label class="row">
+        Host <input type="text" id="jdHost" placeholder="127.0.0.1" />
+        Port <input type="number" id="jdPort" min="1" max="65535" />
+      </label>
+      <p class="hint">
+        JDownloader must have <em>Settings &rarr; Advanced Settings &rarr;
+        "Remote Control / External Interface"</em> enabled. Leave the host as
+        127.0.0.1 unless JD2 runs on another machine.
+      </p>
+      <div class="actions">
+        <button id="test" class="btn btn--secondary">Test connection</button>
+        <span id="test-result" class="result"></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Page behaviour</legend>
+      <label class="row">
+        <input type="checkbox" id="rewriteLinks" />
+        Rewrite wrapped links in place, so clicking goes straight to the destination
+      </label>
+      <label class="row">
+        <input type="checkbox" id="showBadges" />
+        Show a "decoded" badge next to links that were unwrapped
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>File hosts</legend>
+      <p class="hint">
+        Links to these hosts are collected and offered to JDownloader even
+        though their URLs contain no <code>.rar</code>. One host per line.
+        Leave empty to use the built-in list.
+      </p>
+      <textarea id="fileHosts" spellcheck="false"></textarea>
+      <p class="hint"><a href="#" id="restore-hosts">Restore built-in list</a></p>
+    </fieldset>
+
+    <div class="actions">
+      <button id="save" class="btn btn--primary">Save</button>
+      <span id="save-result" class="result"></span>
+    </div>
+
+    <script src="links.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

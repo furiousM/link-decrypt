@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  extension:
+    name: Extension tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Unwrapper vectors
+        run: node test/test_unwrap.mjs
+      - name: Link classification
+        run: node test/test_links.mjs
+      - name: HTML harvesting
+        run: node test/test_harvest.mjs
+      - name: Crawl orchestration
+        run: node test/test_crawl.mjs
+      - name: Loadable folder layout
+        run: node test/test_layout.mjs
+      - name: Validate manifest.json
+        run: |
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+            console.log('manifest ok, MV' + m.manifest_version + ' v' + m.version);
+          "
+
+      # Build the shareable zip on every push, so there's always a clean
+      # artifact to hand someone without running anything locally.
+      - name: Package
+        run: ./package.sh
+      - name: Read version
+        id: v
+        run: echo "version=$(node -p "require('./manifest.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: link-decrypt-v${{ steps.v.outputs.version }}
+          path: dist/*.zip
+          if-no-files-found: error

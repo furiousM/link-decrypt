@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>link-decrypt</title>
+  </head>
+  <body>
+    <header>
+      <h1>link-decrypt <span id="version" class="version"></span></h1>
+      <span id="jd-status" class="status status--unknown" title="JDownloader connection">
+        checking&hellip;
+      </span>
+    </header>
+
+    <section id="page-destination" class="panel hidden">
+      <div class="panel__label">This page is a wrapped link</div>
+      <a id="destination-link" class="destination" href="#" target="_blank" rel="noreferrer"></a>
+      <button id="go-destination" class="btn btn--secondary">Go to real destination</button>
+    </section>
+
+    <section class="summary">
+      <span id="decoded-count">0</span> link(s) decoded on this page
+    </section>
+
+    <section id="follow-panel" class="panel hidden">
+      <div class="panel__label">
+        <span id="followable-count">0</span> decoded link(s) point to other pages
+      </div>
+      <p class="follow-hint">
+        The actual <code>.rar</code> / host links usually live on those pages.
+        Follow them and collect what's there.
+      </p>
+      <button id="follow" class="btn btn--secondary">
+        Follow links &amp; find downloads
+      </button>
+      <div id="crawl-progress" class="crawl-progress hidden">
+        <div class="crawl-bar"><div id="crawl-bar-fill"></div></div>
+        <span id="crawl-status" class="muted small"></span>
+      </div>
+    </section>
+
+    <section class="list-section">
+      <div class="list-header">
+        <label class="checkbox">
+          <input type="checkbox" id="select-all" checked />
+          <span>Downloadable links found</span>
+        </label>
+        <span id="link-count" class="muted">0</span>
+      </div>
+      <div id="host-filters" class="host-filters hidden"></div>
+      <ul id="links"></ul>
+      <p id="empty-state" class="muted empty">
+        No archive or file-host links found on this page.
+      </p>
+    </section>
+
+    <footer>
+      <button id="send" class="btn btn--primary" disabled>
+        Send to JDownloader
+      </button>
+      <div id="result" class="result"></div>
+      <a id="open-options" href="#" class="muted small">Settings</a>
+    </footer>
+
+    <script src="unwrap.js"></script>
+    <script src="links.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
