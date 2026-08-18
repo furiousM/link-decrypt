@@ -192,13 +192,19 @@ default.
 
 ## Publishing a new version
 
+1. Bump `version` in `manifest.json`
+2. Add a short entry to [`CHANGELOG.md`](CHANGELOG.md) saying what
+   changed and why — one paragraph is plenty, but don't skip it
+3. Tag it:
+
 ```bash
-# bump "version" in manifest.json, then:
-git tag v0.4.0 && git push origin v0.4.0
+git tag v0.7.0 && git push origin v0.7.0
 ```
 
 CI runs the tests, checks the tag matches `manifest.json`, builds the zip
-and publishes it to Releases with install instructions attached.
+and publishes it to Releases. Put the same changelog entry in the release
+notes, so anyone downloading it can see what changed without reading
+commits.
 
 To build one locally:
 
