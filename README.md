@@ -122,6 +122,13 @@ without it an unrecognised link would vanish from the UI entirely.
 Anything you find yourself unticking often is worth adding to the host
 list in Settings.
 
+The same reasoning applies when following: if a link we didn't recognise
+turns out to have no links on it, that usually means the page *is* the
+download and we simply didn't know the host. Rather than give up, the
+original link goes to JDownloader — which knows hundreds of hosts, far
+more than any list kept here. Worst case it reports the link offline,
+which costs nothing.
+
 Each row shows the link's **text from the page** rather than a bare
 hostname, since when one file is offered across several hosts every row
 would otherwise read the same. Above the list, **per-host chips** toggle

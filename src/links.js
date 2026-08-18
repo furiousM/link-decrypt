@@ -36,6 +36,8 @@
     "akirabox.com", "vikingfile.com", "datanodes.to", "buzzheavier.com",
     "letsupload.io", "mixdrop.co", "qiwi.gg", "swisstransfer.com",
     "sendspace.com", "zippyshare.day", "filecrypt.cc", "cosmobox.org",
+    "rootz.so", "filekeeper.net", "fileaxa.com", "hexload.com",
+    "nippyshare.com", "desiupload.co", "up-4ever.net", "streamtape.com",
   ];
 
   function hostnameOf(url) {

@@ -332,11 +332,56 @@ const tests = {
     assert.equal(posted[0].get("urls"), "https://1fichier.com/?abc");
   },
 
-  async "following a page with no downloads explains itself"() {
-    site = { "https://site.test/empty": { html: "<p>nothing here</p>" } };
-    const result = await sendSmart(["https://site.test/empty"], "pkg");
-    assert.equal(result.ok, false);
-    assert.match(result.error, /found no downloadable/i);
+  async "an unrecognised host is handed to JD rather than failing"() {
+    // The real failure: a direct download link on a host missing from our
+    // list got treated as a page, fetched, yielded nothing (the page *is*
+    // the download), and the whole send failed -- even though JD has a
+    // plugin for that host. JD knows far more hosts than we do, so it
+    // gets the link and decides for itself.
+    const unknown = "https://brand-new-host.test/d/1BKxwO";
+    site = { [unknown]: { html: "<p>a download page, no links on it</p>" } };
+    const posted = [];
+    const fakeWeb = globalThis.fetch;
+    globalThis.fetch = async (url, opts) => {
+      if (String(url).includes("127.0.0.1")) {
+        posted.push(new URLSearchParams(opts.body));
+        return { ok: true, status: 200 };
+      }
+      return fakeWeb(url, opts);
+    };
+    let result;
+    try {
+      result = await sendSmart([unknown], "pkg");
+    } finally {
+      globalThis.fetch = fakeWeb;
+    }
+
+    assert.equal(result.ok, true, "must not fail just because we don't know the host");
+    assert.equal(result.unrecognised, 1);
+    assert.equal(posted[0].get("urls"), unknown, "the original link goes to JD");
+  },
+
+  async "a page that yields links sends those, not the page itself"() {
+    // The fallback must not fire when harvesting actually worked.
+    const page = "https://site.test/archives/1";
+    site = { [page]: { html: `<a href="https://1fichier.com/?real">dl</a>` } };
+    const posted = [];
+    const fakeWeb = globalThis.fetch;
+    globalThis.fetch = async (url, opts) => {
+      if (String(url).includes("127.0.0.1")) {
+        posted.push(new URLSearchParams(opts.body));
+        return { ok: true, status: 200 };
+      }
+      return fakeWeb(url, opts);
+    };
+    try {
+      await sendSmart([page], "pkg");
+    } finally {
+      globalThis.fetch = fakeWeb;
+    }
+    const sent = posted[0].get("urls").split("\n");
+    assert.deepEqual(sent, ["https://1fichier.com/?real"]);
+    assert.ok(!sent.includes(page), "the page itself must not be sent");
   },
 
   async "reaches mirrors that live one page further on, linked plainly"() {

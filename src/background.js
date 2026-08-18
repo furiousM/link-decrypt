@@ -289,17 +289,17 @@ async function sendSmart(urls, packageName, referrer) {
     pagesFetched = result.pagesFetched;
   }
 
-  const all = [...new Set([...direct, ...harvested])];
+  // A "page" that yielded nothing is very often a file host we simply
+  // don't have in our list — a direct download link we failed to
+  // recognise, fetched, and found no links on because the page *is* the
+  // download. JDownloader has hundreds of host plugins, far more than any
+  // list maintained here, so hand it the original link rather than giving
+  // up. Worst case it reports the link offline, which costs nothing.
+  const barren = pages.filter((p) => !harvested.length);
+  const all = [...new Set([...direct, ...harvested, ...barren])];
+
   if (!all.length) {
-    return {
-      ok: false,
-      error: pages.length
-        ? `Followed ${pagesFetched} page(s) but found no downloadable ` +
-          `links on them. The page may build its links with JavaScript, ` +
-          `or sit behind another gate.`
-        : "Nothing to send.",
-      followed: pages.length,
-    };
+    return { ok: false, error: "Nothing to send.", followed: pages.length };
   }
 
   const result = await sendLinks(all, packageName, referrer);
@@ -308,6 +308,7 @@ async function sendSmart(urls, packageName, referrer) {
     direct: direct.length,
     followed: pages.length,
     harvested: harvested.length,
+    unrecognised: barren.length,
   };
 }
 
