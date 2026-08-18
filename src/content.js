@@ -56,12 +56,111 @@
       .link-decrypt-badge.link-decrypt-copied { background: #1f6feb; }
       .link-decrypt-badge.link-decrypt-sending { background: #8b949e; }
       .link-decrypt-badge.link-decrypt-failed { background: #e5534b; }
+
+      /* Own tooltip rather than the native title attribute: title is
+         unreliable on pages that run their own hover handling, and it
+         silently shows nothing at all on some sites. position:fixed
+         keeps it clear of any overflow:hidden ancestor. */
+      #link-decrypt-tip {
+        position: fixed;
+        z-index: 2147483647;
+        max-width: 320px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        background: #1f232b;
+        color: #e6e9ef !important;
+        border: 1px solid #2f3540;
+        box-shadow: 0 6px 20px rgba(0,0,0,.35);
+        font: 400 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .12s ease;
+      }
+      #link-decrypt-tip.link-decrypt-tip-on { opacity: 1; }
+      #link-decrypt-tip b { color: #7ee2a8; font-weight: 600; }
+      #link-decrypt-tip .link-decrypt-tip-dest {
+        display: block;
+        margin: 5px 0 7px;
+        color: #79c0ff !important;
+        word-break: break-all;
+        font-size: 11px;
+      }
+      #link-decrypt-tip .link-decrypt-tip-alt {
+        display: block;
+        margin-top: 5px;
+        color: #8b949e !important;
+        font-size: 11px;
+      }
       a[${MARK_ATTR}="decoded"] {
         outline: 1px dashed rgba(46, 160, 67, .8);
         outline-offset: 2px;
       }
     `;
     (document.head || document.documentElement).appendChild(style);
+  }
+
+  /* ---------------------------- tooltip ----------------------------- */
+
+  let tip = null;
+
+  function tooltipEl() {
+    if (tip && tip.isConnected) return tip;
+    tip = document.createElement("div");
+    tip.id = "link-decrypt-tip";
+    // Built with DOM nodes and textContent — the destination comes from
+    // the page, so it must never be interpolated as markup.
+    document.body.appendChild(tip);
+    return tip;
+  }
+
+  function showTooltip(badge, destination) {
+    const el = tooltipEl();
+    el.textContent = "";
+
+    const action = document.createElement("b");
+    action.textContent = "Click to send to JDownloader";
+
+    const dest = document.createElement("span");
+    dest.className = "link-decrypt-tip-dest";
+    dest.textContent = destination;
+
+    const manual = document.createElement("span");
+    manual.textContent =
+      "No JDownloader? Click the link itself to open this page and " +
+      "download it yourself.";
+
+    const alt = document.createElement("span");
+    alt.className = "link-decrypt-tip-alt";
+    alt.textContent = "Alt-click this badge to copy the address.";
+
+    el.append(action, dest, manual, alt);
+
+    // If a send already failed, the reason belongs here rather than in a
+    // native title tooltip that may never appear.
+    if (badge.dataset.linkDecryptError) {
+      const err = document.createElement("span");
+      err.className = "link-decrypt-tip-alt";
+      err.textContent = "Last attempt: " + badge.dataset.linkDecryptError;
+      el.append(err);
+    }
+
+    // Measure, then place above the badge unless there's no room.
+    el.classList.add("link-decrypt-tip-on");
+    const b = badge.getBoundingClientRect();
+    const t = el.getBoundingClientRect();
+    const margin = 8;
+    let top = b.top - t.height - margin;
+    if (top < margin) top = b.bottom + margin;
+    let left = b.left;
+    if (left + t.width > window.innerWidth - margin) {
+      left = Math.max(margin, window.innerWidth - t.width - margin);
+    }
+    el.style.top = `${top}px`;
+    el.style.left = `${left}px`;
+  }
+
+  function hideTooltip() {
+    if (tip) tip.classList.remove("link-decrypt-tip-on");
   }
 
   /** Name JDownloader packages after the release, not the site. */
@@ -88,10 +187,20 @@
     const badge = document.createElement("span");
     badge.className = "link-decrypt-badge";
     badge.textContent = "→ " + label;
-    badge.title =
-      destination + "\n\nClick: send to JDownloader\nAlt-click: copy URL";
     badge.setAttribute("role", "button");
     badge.setAttribute("tabindex", "0");
+    badge.setAttribute("aria-label", `Send ${destination} to JDownloader`);
+
+    badge.addEventListener("mouseenter", () => showTooltip(badge, destination));
+    badge.addEventListener("focus", () => showTooltip(badge, destination));
+    badge.addEventListener("mouseleave", hideTooltip);
+    badge.addEventListener("blur", hideTooltip);
+
+    // Make the manual route discoverable on the link itself too, without
+    // clobbering a title the site already set.
+    if (!anchor.title) {
+      anchor.title = `Opens ${destination}\n(decoded by link-decrypt)`;
+    }
 
     const flash = (text, cls) => {
       badge.textContent = text;
@@ -117,9 +226,9 @@
     const send = () => {
       if (sentDestinations.has(destination)) {
         flash("already sent", "link-decrypt-copied");
-        badge.title =
-          `Already sent to JDownloader from this page.\n\n` +
-          `Other links here point at the same destination:\n${destination}`;
+        badge.dataset.linkDecryptError =
+          "Already sent from this page — other links here point at the " +
+          "same destination.";
         return;
       }
 
@@ -142,19 +251,16 @@
             const pending = response?.pending;
             const badgeText = pending ? "confirm in JD" : "JD failed";
             flash(badgeText, "link-decrypt-failed");
-            badge.title = response?.error || "Could not reach JDownloader";
+            badge.dataset.linkDecryptError =
+              response?.error || "Could not reach JDownloader.";
             return;
           }
           // Report what actually got sent. "sent to JD" while zero links
           // reached the Linkgrabber is exactly how this went wrong before.
           const n = response.count ?? 0;
           sentDestinations.add(destination);
+          delete badge.dataset.linkDecryptError;
           flash(`sent ${n} to JD`, "link-decrypt-copied");
-          if (response.harvested) {
-            badge.title =
-              `${response.harvested} link(s) found by following ` +
-              `${destination}\n\n${destination}`;
-          }
         }
       );
     };
@@ -270,6 +376,10 @@
   function start() {
     injectStyles();
     scan(document);
+
+    // A fixed-position tooltip would drift away from its badge on scroll.
+    window.addEventListener("scroll", hideTooltip, { passive: true });
+    window.addEventListener("resize", hideTooltip, { passive: true });
 
     // Pages load links lazily; keep watching, but debounce so we don't
     // re-sweep on every keystroke in a rich text field.
