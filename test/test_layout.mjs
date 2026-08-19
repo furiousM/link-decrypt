@@ -62,6 +62,23 @@ const tests = {
     assert.deepEqual(missing, [], `manifest references missing files`);
   },
 
+  // The whole point of scoping this to one site is that it doesn't run
+  // anywhere else, and a stray wildcard in the manifest would undo that
+  // without any visible symptom.
+  "content scripts are scoped to the one site, not every page"() {
+    const m = JSON.parse(
+      fs.readFileSync(path.join(root, "manifest.json"), "utf8")
+    );
+    const matches = m.content_scripts.flatMap((c) => c.matches);
+    assert.ok(matches.length > 0, "expected at least one match pattern");
+    for (const pattern of matches) {
+      assert.ok(
+        /^https:\/\/(\*\.)?dlpsgame\.com\//.test(pattern),
+        `content script would run outside dlpsgame.com: ${pattern}`
+      );
+    }
+  },
+
   "service worker's importScripts targets exist"() {
     // importScripts paths are relative to the service worker file, and a
     // typo here fails only at runtime, in a console nobody is watching.

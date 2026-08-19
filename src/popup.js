@@ -191,10 +191,13 @@
     try {
       summary = await chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_LINKS" });
     } catch (err) {
-      // Content script isn't present (chrome:// page, PDF viewer, or the
-      // page predates the extension being loaded).
+      // Content script isn't present. Almost always because this isn't
+      // dlpsgame.com — that's the only site it runs on — but it also
+      // happens on a page that was already open when the extension was
+      // loaded, which a reload fixes.
       $("empty-state").textContent =
-        "Can't read this page. Reload it, or it may be a restricted page.";
+        "Nothing to read here. This works on dlpsgame.com only; if you " +
+        "are on it already, reload the page.";
       $("empty-state").classList.remove("hidden");
       return;
     }

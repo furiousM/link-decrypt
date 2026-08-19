@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "link-decrypt",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Decodes ad-shortened links in place, follows them to find .rar / file-host links, and sends them to JDownloader 2.",
   "permissions": [
     "storage",
@@ -20,8 +20,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["src/unwrap.js", "src/links.js", "src/content.js"],
+      "matches": [
+        "https://dlpsgame.com/*",
+        "https://*.dlpsgame.com/*"
+      ],
+      "js": [
+        "src/unwrap.js",
+        "src/links.js",
+        "src/content.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }

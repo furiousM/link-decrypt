@@ -39,6 +39,49 @@
     }
   }
 
+  // Some links are deliberately hidden from scrapers: the `href` is left
+  // as "#" and the real address is split across two data attributes,
+  // rejoined by the site's own click handler.
+  //
+  //   <a href="#" class="secure-lnk"
+  //      data-domain="https://rootz." data-path="so/d/UjCoy">Part.12</a>
+  //
+  // One file out of a twelve-part set was written that way, so the set
+  // arrived one short with nothing to indicate anything was missing.
+  //
+  // The halves are joined exactly as written — the split lands in the
+  // middle of the hostname above, so inserting a separator would corrupt
+  // it. The only tidying is collapsing a doubled slash when the left half
+  // ends with one and the right half begins with one.
+  const A_TAG_RE = /<a\b[^>]*>/gi;
+  const DOMAIN_ATTR_RE =
+    /\bdata-(?:domain|host|base|prefix)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i;
+  const PATH_ATTR_RE =
+    /\bdata-(?:path|suffix|file|link|url)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i;
+
+  function attrValue(tag, pattern) {
+    const match = pattern.exec(tag);
+    if (!match) return "";
+    return decodeEntities(match[1] ?? match[2] ?? match[3] ?? "").trim();
+  }
+
+  /** Anchors whose address is split across data attributes. */
+  function splitAttributeLinks(html) {
+    const out = [];
+    let match;
+    A_TAG_RE.lastIndex = 0;
+    while ((match = A_TAG_RE.exec(html)) !== null) {
+      const tag = match[0];
+      if (!/\bdata-/i.test(tag)) continue;
+      const domain = attrValue(tag, DOMAIN_ATTR_RE);
+      const path = attrValue(tag, PATH_ATTR_RE);
+      if (!domain || !path) continue;
+      const joined = (domain + path).replace(/([^:])\/\//g, "$1/");
+      if (/^https?:\/\/\S+$/i.test(joined)) out.push({ domain, url: joined });
+    }
+    return out;
+  }
+
   /** Every absolute http(s) URL referenced by this HTML. */
   function extractLinks(html, baseUrl) {
     const found = new Set();
@@ -55,6 +98,15 @@
     BARE_URL_RE.lastIndex = 0;
     while ((match = BARE_URL_RE.exec(html)) !== null) {
       found.add(decodeEntities(match[0]).replace(/[.,;:]+$/, ""));
+    }
+
+    // Rejoin split addresses, and drop the half-address the bare-URL scan
+    // above will have picked up out of `data-domain` — on its own it is a
+    // truncated hostname that resolves to nothing.
+    for (const { domain, url } of splitAttributeLinks(html)) {
+      found.delete(domain);
+      found.delete(domain.replace(/[.,;:]+$/, ""));
+      found.add(url);
     }
 
     return [...found];
@@ -134,7 +186,12 @@
     };
   }
 
-  root.LinkDecryptHarvest = { extractLinks, harvestFromHtml, siblingsOf };
+  root.LinkDecryptHarvest = {
+    extractLinks,
+    harvestFromHtml,
+    siblingsOf,
+    splitAttributeLinks,
+  };
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = root.LinkDecryptHarvest;

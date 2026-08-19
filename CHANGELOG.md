@@ -2,6 +2,37 @@
 
 What changed in each release, newest first.
 
+## v0.8.0
+
+**A part of a set could go missing without saying so.** Baldur's Gate 3
+has twelve parts and only eleven were sent. The twelfth was written
+differently from the other eleven: its `href` was just `#`, and the real
+address was split in half across two `data-` attributes for the site's
+own script to glue back together when you click it —
+
+```html
+<a href="#" data-domain="https://rootz." data-path="so/d/UjCoy">Part.12</a>
+```
+
+Nothing in that is an address, so nothing was collected, and eleven parts
+looked like a complete set. Those halves are now rejoined, so the link is
+found the same as any other. This affects one link here and there rather
+than whole sets, which is exactly what makes it easy to miss — an archive
+that won't extract, for a reason nothing on screen explains.
+
+**It only runs on dlpsgame.com now.** Previously the content script was
+declared for every `http`/`https` page, which meant it loaded on every
+site you visited to look for links it would only ever find on one. It is
+now scoped to that site alone, as are the two right-click menu entries.
+Everywhere else the extension does nothing at all. A test fails the build
+if a match pattern ever reaches wider again.
+
+The permission to *fetch* pages stays broad, and can't sensibly be
+narrowed: a download hides behind mirror pages living on whatever domain
+the site sends you to, and reading those requires it. The difference is
+that it now only happens for a page you clicked to follow, never for a
+page you're merely visiting.
+
 ## v0.7.0
 
 **Hovering a badge now explains what it does.** It shows that clicking

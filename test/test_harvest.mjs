@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 const require = createRequire(import.meta.url);
 require("../src/unwrap.js");
 require("../src/links.js");
-const { extractLinks, harvestFromHtml } = require("../src/harvest.js");
+const { extractLinks, harvestFromHtml, splitAttributeLinks } =
+  require("../src/harvest.js");
 
 const b64 = (s) => Buffer.from(s, "utf8").toString("base64");
 
@@ -115,6 +116,54 @@ const tests = {
     assert.equal(
       harvestFromHtml(html, PAGE, ["myhost.test"]).downloads.length,
       1
+    );
+  },
+
+  // A twelve-part set where the last part is hidden from scrapers: href
+  // is "#", and the real address is split across two data attributes for
+  // the site's own click handler to rejoin. Eleven parts arrived and the
+  // twelfth vanished silently.
+  "an address split across data attributes is rejoined"() {
+    const html = `
+      <a rel="noopener" href="https://www.rootz.so/d/aaa" target="_blank">Part.01</a>
+      <a rel="noopener" href="#" target="_blank" class="secure-lnk"
+         data-domain="https://rootz." data-path="so/d/UjCoy">Part.02</a>`;
+    const links = extractLinks(html, PAGE);
+    assert.ok(links.includes("https://rootz.so/d/UjCoy"));
+    assert.equal(harvestFromHtml(html, PAGE).downloads.length, 2);
+  },
+
+  "the half-address left behind by a split link is discarded"() {
+    // "https://rootz." is a bare URL as far as the text scan is
+    // concerned, and it would otherwise be sent as a broken link.
+    const html = `<a href="#" data-domain="https://rootz." data-path="so/d/x">P</a>`;
+    const links = extractLinks(html, PAGE);
+    assert.ok(!links.some((l) => /^https:\/\/rootz\.?$/.test(l)));
+  },
+
+  "split links survive the other quoting styles and attribute order"() {
+    const html = `
+      <a data-path='so/d/one' data-domain='https://rootz.' href="#">a</a>
+      <a href=# data-domain=https://rootz. data-path=so/d/two>b</a>`;
+    const links = extractLinks(html, PAGE);
+    assert.ok(links.includes("https://rootz.so/d/one"));
+    assert.ok(links.includes("https://rootz.so/d/two"));
+  },
+
+  "a split that already carries its separators is not doubled"() {
+    const html = `<a href="#" data-domain="https://rootz.so/" data-path="/d/x">a</a>`;
+    assert.deepEqual(
+      splitAttributeLinks(html).map((s) => s.url),
+      ["https://rootz.so/d/x"]
+    );
+  },
+
+  "half a split pair, or a non-http one, is ignored"() {
+    assert.deepEqual(splitAttributeLinks(`<a data-domain="https://x.">a</a>`), []);
+    assert.deepEqual(splitAttributeLinks(`<a data-path="so/d/x">a</a>`), []);
+    assert.deepEqual(
+      splitAttributeLinks(`<a data-domain="javascript:" data-path="x()">a</a>`),
+      []
     );
   },
 

@@ -9,6 +9,9 @@ anything.
 shortened links on the page  -->  resolved in place  -->  JDownloader 2
 ```
 
+It runs on **dlpsgame.com only**. Everywhere else it is inert: no badges,
+no right-click entries, nothing reading the page.
+
 No build step, no dependencies, no bundler, no telemetry — the files
 Chrome loads are the files in this repo.
 
@@ -270,14 +273,16 @@ node test/test_unwrap.mjs   # resolving wrapped links
 node test/test_links.mjs    # archive / file-host classification
 node test/test_harvest.mjs  # pulling links out of page HTML
 node test/test_crawl.mjs    # depth, dedup, page caps, failures
-node test/test_layout.mjs   # the folder still loads as an extension
+node test/test_layout.mjs   # loads as an extension, and only on the one site
 ```
 
 `test_crawl.mjs` stubs `fetch` with a small fake site graph, so the
 depth/dedup/cap logic is verified without touching the network.
 `test_layout.mjs` earns its place because the repo root *is* the folder
-Chrome loads: it fails on reserved `_` names and checks the manifest's
-references and the service worker's `importScripts` targets all resolve.
+Chrome loads: it fails on reserved `_` names, checks the manifest's
+references and the service worker's `importScripts` targets all resolve,
+and fails if a content-script match pattern would ever reach beyond
+`dlpsgame.com`.
 `package.sh` runs it before building, so a broken layout can't be
 packaged.
 
@@ -293,11 +298,16 @@ CI runs all five on every push.
 | `activeTab` | lets the popup read links from the tab you're looking at |
 | `http://127.0.0.1/*`, `http://localhost/*` | talking to JDownloader |
 | `http://*/*`, `https://*/*` | fetching followed pages to harvest their links |
-| content script on `http`/`https` | resolving links on the page you're viewing |
+| content script on `dlpsgame.com` | resolving links on the page you're viewing |
 
-The broad host permission is what makes following links possible —
-reading another page's HTML cross-origin requires it. It is only ever
-used for pages you explicitly ask it to follow.
+The content script — the part that reads a page and puts badges on it —
+is limited to `dlpsgame.com`.
+
+The host permission is separate and stays broad, because the mirror pages
+a download hides behind live on whatever domain the site sends you to,
+and reading another page's HTML cross-origin requires permission for it.
+It is only ever used for pages you explicitly ask it to follow, one click
+at a time, and never to read a page you are merely visiting.
 
 ## Security
 
@@ -323,13 +333,18 @@ step, so what's in `src/` is what runs.
   "omit"`), so your cookies for those sites aren't attached.
 * **Settings stay local**, in `chrome.storage`.
 
-The one thing worth weighing before you install: the content script runs
-on every `http`/`https` page in order to spot wrapped links, and the host
-permission lets the service worker fetch pages you tell it to follow.
-That's a real level of access. It's the minimum this can work with, but
-it *is* broad, and you should be comfortable with that — or read
-`src/content.js` and `src/background.js`, which are about 400 lines
-between them.
+* **One site only.** The content script is declared for `dlpsgame.com`
+  and nothing else, so on every other page you visit the extension never
+  runs at all — see `content_scripts.matches` in `manifest.json`, which
+  a test enforces.
+
+The one thing worth weighing before you install: the host permission
+still covers all sites, because the service worker has to fetch the
+mirror pages a download hides behind and those sit on other domains.
+Chrome's install prompt reports that as access to every site, which is
+accurate about what it *could* do. What it actually does is in
+`src/content.js` and `src/background.js` — about 400 lines between them,
+and worth the read if that matters to you.
 
 ## Disclaimer
 

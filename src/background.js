@@ -337,17 +337,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
-/* Right-click a link -> send it straight to JDownloader. */
+/* Right-click a link -> send it straight to JDownloader.
+ *
+ * Scoped to the one site this is built for, so it matches where the
+ * content script runs and doesn't turn up in the menu everywhere else. */
+const SITE_PATTERNS = ["https://dlpsgame.com/*", "https://*.dlpsgame.com/*"];
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "send-link-to-jd",
     title: "Send link to JDownloader",
     contexts: ["link"],
+    documentUrlPatterns: SITE_PATTERNS,
   });
   chrome.contextMenus.create({
     id: "send-page-to-jd",
     title: "Send all download links on this page to JDownloader",
     contexts: ["page"],
+    documentUrlPatterns: SITE_PATTERNS,
   });
 });
 
