@@ -339,9 +339,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 /* Right-click a link -> send it straight to JDownloader.
  *
- * Scoped to the one site this is built for, so it matches where the
+ * Scoped to the sites this is built for, so it matches where the
  * content script runs and doesn't turn up in the menu everywhere else. */
-const SITE_PATTERNS = ["https://dlpsgame.com/*", "https://*.dlpsgame.com/*"];
+const SITE_PATTERNS = [
+  "https://dlpsgame.com/*", "https://*.dlpsgame.com/*",
+  "https://nswgf.com/*", "https://*.nswgf.com/*",
+];
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({

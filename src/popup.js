@@ -192,12 +192,12 @@
       summary = await chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_LINKS" });
     } catch (err) {
       // Content script isn't present. Almost always because this isn't
-      // dlpsgame.com — that's the only site it runs on — but it also
+      // one of the sites it runs on, but it also
       // happens on a page that was already open when the extension was
       // loaded, which a reload fixes.
       $("empty-state").textContent =
-        "Nothing to read here. This works on dlpsgame.com only; if you " +
-        "are on it already, reload the page.";
+        "Nothing to read here. This works on dlpsgame.com and nswgf.com " +
+        "only; if you are on one already, reload the page.";
       $("empty-state").classList.remove("hidden");
       return;
     }

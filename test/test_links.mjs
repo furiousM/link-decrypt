@@ -59,6 +59,12 @@ const tests = {
     assert.equal(classify("https://www.mediafire.com/file/xyz"), "host");
   },
 
+  "nswgf.com's hosts are detected"() {
+    assert.equal(classify("https://frdl.pw/b3us4y14ao3a/G.nsp.rar.html"), "host");
+    assert.equal(classify("https://send.now/symcr5dp2aej"), "host");
+    assert.equal(classify("https://megaup.net/6f9c/G"), "host");
+  },
+
   "subdomains of known hosts count"() {
     assert.equal(classify("https://dl2.rapidgator.net/file/abc"), "host");
   },

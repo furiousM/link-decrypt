@@ -2,6 +2,19 @@
 
 What changed in each release, newest first.
 
+## v0.9.0
+
+**It works on nswgf.com too.** Scoping to dlpsgame.com in v0.8.0 left the
+extension doing nothing at all on nswgf.com, its Nintendo Switch sister
+site: no badges, empty popup, no right-click entries. The content script
+and menu entries now cover both sites.
+
+**Three more file hosts are recognised**: `megaup.net`, `frdl.pw` (a
+second domain for `frdl.io`) and `send.now`. nswgf.com links to all
+three, and without them those mirrors were skipped. If you have saved
+your own host list in the options, add them there too — a saved list
+replaces the defaults.
+
 ## v0.8.0
 
 **A part of a set could go missing without saying so.** Baldur's Gate 3

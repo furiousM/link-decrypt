@@ -9,7 +9,7 @@ anything.
 shortened links on the page  -->  resolved in place  -->  JDownloader 2
 ```
 
-It runs on **dlpsgame.com only**. Everywhere else it is inert: no badges,
+It runs on **dlpsgame.com and nswgf.com only**. Everywhere else it is inert: no badges,
 no right-click entries, nothing reading the page.
 
 No build step, no dependencies, no bundler, no telemetry — the files
@@ -282,7 +282,7 @@ depth/dedup/cap logic is verified without touching the network.
 Chrome loads: it fails on reserved `_` names, checks the manifest's
 references and the service worker's `importScripts` targets all resolve,
 and fails if a content-script match pattern would ever reach beyond
-`dlpsgame.com`.
+`dlpsgame.com` and `nswgf.com`.
 `package.sh` runs it before building, so a broken layout can't be
 packaged.
 
@@ -298,10 +298,10 @@ CI runs all five on every push.
 | `activeTab` | lets the popup read links from the tab you're looking at |
 | `http://127.0.0.1/*`, `http://localhost/*` | talking to JDownloader |
 | `http://*/*`, `https://*/*` | fetching followed pages to harvest their links |
-| content script on `dlpsgame.com` | resolving links on the page you're viewing |
+| content script on `dlpsgame.com`, `nswgf.com` | resolving links on the page you're viewing |
 
 The content script — the part that reads a page and puts badges on it —
-is limited to `dlpsgame.com`.
+is limited to `dlpsgame.com` and `nswgf.com`.
 
 The host permission is separate and stays broad, because the mirror pages
 a download hides behind live on whatever domain the site sends you to,
@@ -333,8 +333,8 @@ step, so what's in `src/` is what runs.
   "omit"`), so your cookies for those sites aren't attached.
 * **Settings stay local**, in `chrome.storage`.
 
-* **One site only.** The content script is declared for `dlpsgame.com`
-  and nothing else, so on every other page you visit the extension never
+* **Two sites only.** The content script is declared for `dlpsgame.com`
+  and `nswgf.com` and nothing else, so on every other page you visit the extension never
   runs at all — see `content_scripts.matches` in `manifest.json`, which
   a test enforces.
 

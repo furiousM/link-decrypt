@@ -38,6 +38,7 @@
     "sendspace.com", "zippyshare.day", "filecrypt.cc", "cosmobox.org",
     "rootz.so", "filekeeper.net", "fileaxa.com", "hexload.com",
     "nippyshare.com", "desiupload.co", "up-4ever.net", "streamtape.com",
+    "megaup.net", "frdl.pw", "send.now",
   ];
 
   function hostnameOf(url) {

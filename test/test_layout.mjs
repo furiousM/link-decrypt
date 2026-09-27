@@ -62,10 +62,10 @@ const tests = {
     assert.deepEqual(missing, [], `manifest references missing files`);
   },
 
-  // The whole point of scoping this to one site is that it doesn't run
+  // The whole point of scoping this to its sites is that it doesn't run
   // anywhere else, and a stray wildcard in the manifest would undo that
   // without any visible symptom.
-  "content scripts are scoped to the one site, not every page"() {
+  "content scripts are scoped to their sites, not every page"() {
     const m = JSON.parse(
       fs.readFileSync(path.join(root, "manifest.json"), "utf8")
     );
@@ -73,8 +73,8 @@ const tests = {
     assert.ok(matches.length > 0, "expected at least one match pattern");
     for (const pattern of matches) {
       assert.ok(
-        /^https:\/\/(\*\.)?dlpsgame\.com\//.test(pattern),
-        `content script would run outside dlpsgame.com: ${pattern}`
+        /^https:\/\/(\*\.)?(dlpsgame|nswgf)\.com\//.test(pattern),
+        `content script would run outside its sites: ${pattern}`
       );
     }
   },
